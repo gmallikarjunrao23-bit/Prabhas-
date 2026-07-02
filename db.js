@@ -1,11 +1,14 @@
 import pg from 'pg';
 const { Pool } = pg;
 
+// Render's managed Postgres needs SSL — this auto-detects a Render
+// connection string, so you don't need to configure anything manually.
+// (You can still force it with PGSSL=true in Environment Variables.)
+const isRenderDb = (process.env.DATABASE_URL || '').includes('render.com');
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // If Railway's Postgres needs SSL for your setup, set PGSSL=true in
-  // Railway → Variables, and this will pick it up automatically.
-  ssl: process.env.PGSSL === 'true' ? { rejectUnauthorized: false } : false,
+  ssl: (process.env.PGSSL === 'true' || isRenderDb) ? { rejectUnauthorized: false } : false,
 });
 
 export async function initDb() {
@@ -40,4 +43,3 @@ export async function kvList(prefix) {
 export async function kvDelete(key) {
   await pool.query('DELETE FROM kv_store WHERE key = $1', [key]);
 }
-
